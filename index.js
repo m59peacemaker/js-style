@@ -1,84 +1,48 @@
-var merge = require('lodash/object/merge');
+var merge          = require('lodash/object/merge');
+var debounce       = require('lodash/function/debounce');
 var resizeDetector = require('element-resize-detector')({
   callOnAdd: false
 });
-var debounce = require('lodash/function/debounce');
+var applyStylesFromObject = require('./lib/apply-styles-from-object');
+var styleParser           = require('./lib/style-parser');
 
-var config = {
-  attr: 'js-style',
-  styleFinder: (element) => {
-    return element[config.attr];
+module.exports = function(options) {
+
+  options = merge({
+    root: document.body,
+    attr: 'js-style',
+    styleFinder: () => null,
+    styleParser: styleParser,
+    debounceWait: 250
+  }, options);
+
+  function applyStyles(element, styles) {
+    applyStylesFromObject(element, options.styleParser(styles, element));
   }
-};
 
-function applyStylesFromObject(element, styleObject) {
-  Object.keys(styleObject).forEach((key) => {
-    element.style[key] = styleObject[key];
+  var observer = new MutationObserver(function(mutations) {
+    mutations.reduce((prev, current) => {
+      return prev.concat([].slice.call(current.addedNodes));
+    }, []).filter((node) => {
+      return node.nodeType === Node.ELEMENT_NODE && node.hasAttribute(options.attr);
+    }).forEach((element) => {
+      var styles = options.styleFinder(element.getAttribute('js-style'), element);
+      applyStyles(element, styles);
+      if (styles.some(styleItem => typeof styleItem === 'function')) {
+        // has function(s) - setup listener
+        resizeDetector.listenTo(element, debounce(applyStyles.bind(null, element, styles), options.debounceWait));
+      }
+    });
   });
-}
 
-function getStyleObject(element, styles) {
-  var styleObjects = styles.map((styleItem) => {
-    if (typeof styleItem === 'object') {
-      return styleItem;
-    } else if (typeof styleItem === 'function') {
-      return styleItem(element);
-    }
-  });
-  styleObjects.unshift({});
-  return merge.apply(null, styleObjects);
-}
-
-function applyStyles(element, styles) {
-  applyStylesFromObject(element, getStyleObject(element, styles));
-}
-
-var observer = new MutationObserver(function(mutations) {
-  mutations.reduce((prev, current) => {
-    return prev.concat([].slice.call(current.addedNodes));
-  }, []).filter((node) => {
-    return node.nodeType === Node.ELEMENT_NODE && node.hasAttribute(config.attr);
-  }).forEach((element) => {
-    var styles = config.styleFinder(element);
-    applyStyles(element, styles);
-    if (styles.some(styleItem => typeof styleItem === 'function')) {
-      // has function(s) - setup listener
-      resizeDetector.listenTo(element, debounce(applyStyles.bind(null, element, styles), 250));
-    }
-  });
-});
-
-observer.observe(document.body, {
-  childList: true,
-  //subtree: true
-});
-
-var elem = document.createElement('div');
-elem.setAttribute(config.attr, true)
-elem[config.attr] = [{
-  color: 'red'
-}, function(element) {
-  if (element.parentNode.offsetWidth < 768) {
-    return {
-      color: 'green'
-    };
+  function init() {
+    observer.observe(options.root, {
+      childList: true,
+      subtree: true
+    });
   }
-}];
-elem.textContent = 'heh hey hey';
-document.body.appendChild(elem);
 
-var p = document.createElement('p');
-elem.setAttribute(config.attr, true)
-elem[config.attr] = [{
-  color: 'red'
-}, function(element) {
-  if (element.parentNode.offsetWidth < 768) {
-    return {
-      color: 'blue'
-    }
+  return {
+    init: init
   }
-}];
-p.textContent = 'YO, G!';
-setTimeout(() => {
-  elem.appendChild(p);
-}, 1000);
+}
