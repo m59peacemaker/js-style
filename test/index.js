@@ -3,7 +3,7 @@ var attr = 'js-style';
 var styler = require('../')({
   attr: attr,
   styleFinder: (val, element) => {
-    return element['js-style'];
+    return element[attr];
   }
 });
 
