@@ -1,0 +1,23 @@
+{
+  "name": "js-style",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "element-resize-detector": "^0.3.7",
+    "lodash": "^3.10.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m59peacemaker/js-style.git"
+  },
+  "author": "",
+  "license": "VOL"
+}
