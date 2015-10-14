@@ -9,7 +9,6 @@ var resizeDetector = require('element-resize-detector')({
 
 var styleParser           = require('./lib/style-parser');
 
-
 module.exports = function(options) {
 
   options = merge({
@@ -53,20 +52,30 @@ module.exports = function(options) {
     var styles    = options.styleFinder(attrValue, element);
     var apply     = applyStyles.bind(null, element, styles, params);
     if (isOld) {
-      removeOldStyles(element);
+      var oldClass = findStyleClass(element);
+      apply();
+      removeOldStyles(element, oldClass);
+    } else {
+      apply();
     }
-    apply();
-    if (!isOld && hasFunction(styles)) {
+    if (hasFunction(styles)) {
       // has function(s) - setup listener
       var listener = options.wait ? debounce(apply, options.wait) : apply;
       resizeDetector.listenTo(element, listener);
     }
   }
 
-  function removeOldStyles(element) {
-    classList(element).remove(new RegExp('^'+options.attr+'-.+'));
-    var elem = element.querySelector('style.'+stylesheetClass);
-    element.removeChild(elem);
+  function findStyleClass(element) {
+    return element.className.split(' ').find((cls) => {
+      return new RegExp('^'+options.attr+'-.+').test(cls);
+    });
+  }
+
+  function removeOldStyles(element, oldClass) {
+    classList(element).remove(oldClass);
+    var styleElem = element.querySelector('style.'+stylesheetClass);
+    element.removeChild(styleElem);
+    resizeDetector.removeAllListeners(element);
   }
 
   function hasFunction(styles) {

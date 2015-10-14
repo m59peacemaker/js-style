@@ -11,7 +11,6 @@ var w = 30;
 
 var attr = 'js-style';
 
-
 function addStyle(element, style, params) {
   element.setAttribute(attr, params || true);
   element[attr] = style;
@@ -229,11 +228,6 @@ test('re-styles when attribute value changes', function(t) {
   });
 });
 
-// ensure old styles are ditched each new run
-// add param helper (plugin?)
-// add plugin system?
-// write transpiler
-
 test('old styles are cleaned out on re-style', function(t) {
   t.plan(3);
   var state = setup();
@@ -244,7 +238,7 @@ test('old styles are cleaned out on re-style', function(t) {
   wait(w).then(function() {
     t.equal(getComputedStyle(elem).backgroundColor, rgb.red);
     addStyle(elem, {color: 'blue'});
-    return wait(w);
+    return wait(w*2);
   }).then(function() {
     t.equal(getComputedStyle(elem).backgroundColor, rgb.transparent);
     t.equal(getComputedStyle(elem).color, rgb.blue);
