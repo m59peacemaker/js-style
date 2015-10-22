@@ -1,21 +1,18 @@
-var merge          = require('lodash/object/merge');
 var debounce       = require('lodash/function/debounce');
 var classList      = require('dom-classlist');
 var jsToCSS        = require('js-to-css');
+var getObject      = require('i-object')();
 var resizeDetector = require('element-resize-detector')({
-  callOnAdd: false,
- // strategy: 'scroll'
+  callOnAdd: false
 });
-
-var styleParser           = require('./lib/style-parser');
 
 module.exports = function(options) {
 
-  options = merge({
+  options = Object.assign({
     attr: 'js-style',
     styleFinder: (value, element) => null,
     paramsFinder: (value, element) => value,
-    styleParser: styleParser,
+    transform: styles => styles,
     wait: 250
   }, options);
 
@@ -23,14 +20,11 @@ module.exports = function(options) {
 
   var i = 0;
   function applyStyles(element, styles, params) {
-    var result = options.styleParser(styles, params, element) || {};
+    var result = getObject(styles, params, element) || {};
+    result = options.transform(result);
     var stylesheet = '';
     var id = options.attr+'-'+(++i);
     element.className+= ' '+id;
-    if (result.pseudo) {
-      stylesheet += getPseudosStylesheet(id, result.pseudo);
-      delete result.pseudo;
-    }
     stylesheet +=  jsToCSS({['.'+id]: result});
     var styleElem = document.createElement('style');
     styleElem.className = stylesheetClass;
@@ -38,18 +32,10 @@ module.exports = function(options) {
     element.appendChild(styleElem);
   }
 
-  function getPseudosStylesheet(id, pseudos) {
-    return Object.keys(pseudos).reduce(function(prev, pseudo) {
-      var style = {};
-      style['.'+id+pseudo] = pseudos[pseudo];
-      return prev+jsToCSS(style);
-    }, '');
-  }
-
   function processElement(element, isOld) {
     var attrValue = element.getAttribute(options.attr);
-    var params    = options.paramsFinder(attrValue, element);
     var styles    = options.styleFinder(attrValue, element);
+    var params    = options.paramsFinder(attrValue, element);
     var apply     = applyStyles.bind(null, element, styles, params);
     if (isOld) {
       var oldClass = findStyleClass(element);
@@ -93,16 +79,13 @@ module.exports = function(options) {
       return prev.concat([].slice.call(current.addedNodes));
     }, []).filter((node) => {
       return node.nodeType === Node.ELEMENT_NODE && node.hasAttribute(options.attr);
-    }).forEach(function(element) {
-      processElement(element);
-    });
+    }).forEach(element => processElement(element));
   });
 
   function init(rootElement) {
     rootElement = rootElement || document.body;
-    [].forEach.call(rootElement.querySelectorAll('['+options.attr+']'), function(element) {
-      processElement(element);
-    });
+    var elements = rootElement.querySelectorAll('['+options.attr+']');
+    Array.from(elements).forEach(element => processElement(element));
     observer.observe(rootElement, {
       childList: true,
       subtree: true,
@@ -113,5 +96,5 @@ module.exports = function(options) {
 
   return {
     init: init
-  }
+  };
 }

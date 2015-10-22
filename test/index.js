@@ -7,7 +7,7 @@ var wait = function(ms) {
 };
 
 // ms to wait for styles to be rendered, tweak as needed, tests may fail if too low
-var w = 30;
+var w = 50;
 
 var attr = 'js-style';
 
@@ -84,7 +84,7 @@ test('responds to window resize', function(t) {
   }]);
 
   // give time for window to load
-  wait(w*2).then(function() {
+  wait(w*10).then(function() {
     state.styler.init(win.document.body);
     win.document.body.appendChild(elem);
     return wait();
@@ -106,13 +106,11 @@ test('applies dynamic pseudo classes (focus)', function(t) {
   elem.href = '';
   addStyle(elem, [{
     color: 'red',
-    pseudo: {
-      ':hover': {
-        color: 'blue'
-      },
-      ':focus': {
-        color: 'black'
-      }
+    '&:hover': {
+      color: 'blue'
+    },
+    '&:focus': {
+      color: 'black'
     }
   }]);
   state.rootElem.appendChild(elem);
@@ -131,10 +129,8 @@ test('applies state pseudo classes (disabled)', function(t) {
   elem.disabled = true;
   addStyle(elem, [{
     color: 'red',
-    pseudo: {
-      ':disabled': {
-        color: 'black'
-      }
+    '&:disabled': {
+      color: 'black'
     }
   }]);
   state.rootElem.appendChild(elem);
@@ -153,10 +149,8 @@ test('applies structual pseudo classes (nth-child)', function(t) {
   var second = document.createElement('div');
   var style = [{
     color: 'red',
-    pseudo: {
-      ':nth-child(2)': {
-        color: 'black'
-      }
+    '&:nth-child(2)': {
+      color: 'black'
     }
   }];
   addStyle(first, style);
@@ -177,10 +171,8 @@ test('applies pseudo elements (::after)', function(t) {
   var elem = document.createElement('div');
   addStyle(elem, [{
     color: 'red',
-    pseudo: {
-      '::after': {
-        content: '"*"'
-      }
+    '&::after': {
+      content: '"*"'
     }
   }]);
   state.rootElem.appendChild(elem);
@@ -245,3 +237,52 @@ test('old styles are cleaned out on re-style', function(t) {
     teardown();
   });
 });
+
+test('object can be transformed before being applied', function(t) {
+  t.plan(1);
+  var state = setup({
+    transform: styles => ({'font-size': '24px'})
+  });
+  var elem = document.createElement('div');
+  addStyle(elem, {
+    'font-size': '24'
+  });
+  state.rootElem.appendChild(elem);
+  state.styler.init(state.rootElem);
+  wait(w).then(function() {
+    t.equal(getComputedStyle(elem).fontSize, '24px');
+  });
+});
+/*
+test('nice way to use style params (needs transform)', function(t) {
+  t.plan(1);
+  var state = setup();
+  var elem = document.createElement('div');
+  addStyle(elem, [{
+    color: 'black',
+    params: {
+      active: {
+        color: 'red'
+      }
+    }
+  }, function() {
+    return {
+      params: {
+        active: {
+          color: 'yellow'
+        }
+      }
+    };
+  }, {
+    params: {
+      active: {
+        color: 'blue'
+      }
+    }
+  }], 'active,light');
+  state.rootElem.appendChild(elem);
+  state.styler.init(state.rootElem);
+  wait(w).then(function() {
+    t.equal(getComputedStyle(elem).color, rgb.blue);
+  });
+});*/

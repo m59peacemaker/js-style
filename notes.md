@@ -1,0 +1,11 @@
+- Watches DOM, processes elements with options.attr
+    - passes attr value and element to options.styleFinder
+        - returns style declarations
+    - passes attr value and element to options.paramsFinder
+        - returns style params for dynamic styles
+    - passes styles to parser that prepares them for application
+    - passes styles through options.transform function
+    - applies styles to element
+    - reprocesses styles when attr value changes
+    - attaches an element query listener to elements that have style functions
+        - reprocesses styles when listener fires

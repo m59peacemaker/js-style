@@ -9,6 +9,7 @@
   "dependencies": {
     "dom-classlist": "^1.0.1",
     "element-resize-detector": "^0.3.7",
+    "i-object": "^1.0.1",
     "lodash": "^3.10.1"
   },
   "devDependencies": {
